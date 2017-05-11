@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <h1 class="header">Мониторинг показателей локомотива ЧМЭ3</h1>
+    <div class="controls" style="">
+      <button data-control type="button">Stop</button>
+      <form data-speed>
+        <input type="number" placeholder="speed">
+        <button type="submit">Set speed</button>
+      </form>
+      <button data-anomalies type="button">Show anomalies</button>
+    </div>
+    <div id="chart"></div>
+    <script src="bundle.js"></script>
+  </body>
+</html>
