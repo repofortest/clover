@@ -923,10 +923,12 @@ var config = exports.config = {
   },
   speed: 500,
   incrementTime: 500,
-  ranges: [[0.49, 0.51], [0.24, 0.26], [0.69, 0.71], [0.56, 0.7]],
+  ranges: [[20, 35], [4, 6], [136, 180], [0.38, 0.5]],
   anomaliesRanges: [[0.89, 0.91], [0.89, 0.91], [0.89, 0.91], [0.56, 0.91]],
-  texts: ['Напряжение\nтягового\nгенератора', 'Частота вращения\nвала дизеля', 'Давление наддува', 'Температура масла\nна выходе\nиз дизеля'],
-  units: ['В', 'об/мин', 'атм', '°С'],
+  yDomain: [[0, 40], [0, 10], [0, 360], [0, 1]],
+  precision: [3, 3, 0, 2],
+  texts: ['Напряжение\nтягового\nэлектродвигателя', 'Ток\nэлектродвигателя', 'Частатота\nвращения\nэлектродвигателя', 'Скорость\nлокомотива'],
+  units: ['мВ', 'мА', 'об/мин', 'м/с'],
   colors: [{
     fill: '#b0c4de',
     stroke: '#4682b4'
@@ -940,7 +942,6 @@ var config = exports.config = {
     fill: '#a388d3',
     stroke: '#673ab7'
   }],
-  yDomain: [0, 1],
   valuesCount: 200
 };
 
@@ -988,12 +989,16 @@ function getDimensions() {
 }
 
 // @param {array} [range] - [min, max]
-function random(range) {
+function random(range, precision) {
+  var number = 0;
   if (range) {
     var delta = range[1] - range[0];
-    return Math.random() * delta + range[0];
+    number = Math.random() * delta + range[0];
+  } else {
+    number = Math.random();
   }
-  return Math.random();
+  if (precision === undefined) return number;
+  return number.toFixed(precision);
 }
 
 function tick(ranges, datum) {
@@ -1001,7 +1006,7 @@ function tick(ranges, datum) {
   datum.forEach(function (data, i) {
     var newValue = {
       date: newDate,
-      value: random(ranges[i])
+      value: random(ranges[i], _config.config.precision[i])
     };
     data.push(newValue);
 
@@ -1020,7 +1025,7 @@ function tick(ranges, datum) {
       state.pathArea[i].attr('d', state.area[i]);
     }, 0);
 
-    state.info[i].select('.number').text(d3.format('.4f')(datum[i][datum[i].length - 1].value));
+    state.info[i].select('.number').text(datum[i][datum[i].length - 1].value);
   });
 
   state.xScale.domain(state.xExtent);
@@ -18699,7 +18704,7 @@ function render(datum) {
 
     state.info[i].select('.title').selectAll('tspan').attr('dy', '18').attr('x', state.offsetWidth - 200 + state.margin.left);
 
-    state.info[i].select('.value').select('.number').text(d3.format('.4f')(datum[i][datum[i].length - 1].value)).attr('x', state.offsetWidth - 200 + state.margin.left).attr('y', state.info[i].select('.title').selectAll('tspan').size() * 18 + state.margin.top + 30).attr('fill', _config.config.colors[i].stroke).attr('font-size', '36');
+    state.info[i].select('.value').select('.number').text(datum[i][datum[i].length - 1].value).attr('x', state.offsetWidth - 200 + state.margin.left).attr('y', state.info[i].select('.title').selectAll('tspan').size() * 18 + state.margin.top + 30).attr('fill', _config.config.colors[i].stroke).attr('font-size', '36');
 
     state.info[i].select('.unit').text(_config.config.units[i]).attr('font-size', '18').attr('dx', 3);
   });
@@ -20571,7 +20576,7 @@ function init(datum) {
     // state.yExtent.push(d3.extent(data, (d, i) => d.value));
 
     // new syntax d3.scale.linear ↦ d3.scaleLinear
-    state.yScale.push(d3.scaleLinear().domain(_config.config.yDomain));
+    state.yScale.push(d3.scaleLinear().domain(_config.config.yDomain[i]));
 
     state.svg.push(d3.select('#chart').append('svg').attr('class', 'chart'));
 
@@ -20734,7 +20739,7 @@ function genData(ranges) {
     ranges.forEach(function (range, i) {
       data[i] = data[i] || [];
       data[i].push({
-        value: (0, _helpers.random)(range),
+        value: (0, _helpers.random)(range, _config.config.precision[i]),
         date: timeStart
       });
     });
