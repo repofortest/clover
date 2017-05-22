@@ -63,7 +63,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 31);
+/******/ 	return __webpack_require__(__webpack_require__.s = 32);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -102,9 +102,9 @@ module.exports = g;
  */
 
 var keys = __webpack_require__(47);
-var hasBinary = __webpack_require__(18);
-var sliceBuffer = __webpack_require__(30);
-var after = __webpack_require__(29);
+var hasBinary = __webpack_require__(19);
+var sliceBuffer = __webpack_require__(31);
+var after = __webpack_require__(30);
 var utf8 = __webpack_require__(62);
 
 var base64encoder;
@@ -918,15 +918,17 @@ var config = exports.config = {
   margin: {
     left: 20,
     right: 10,
-    top: 10,
-    bottom: 12
+    top: 12,
+    bottom: 6
   },
   speed: 500,
   incrementTime: 500,
-  ranges: [[20, 35], [4, 6], [136, 180], [0.38, 0.5]],
-  anomaliesRanges: [[0.89, 0.91], [0.89, 0.91], [0.89, 0.91], [0.56, 0.91]],
-  yDomain: [[0, 40], [0, 10], [0, 360], [0, 1]],
+  ranges: [[20, 35], [4, 5], [136, 180], [0.38, 0.5]],
+  anomaliesRanges: [[43, 46], [8, 9], [136, 180], [0.38, 0.5]],
+  repairingRanges: [[10, 20], [3, 4], [0, 0], [0, 0]],
+  yDomain: [[0, 50], [0, 10], [0, 350], [0, 1]],
   precision: [3, 3, 0, 2],
+  anomaliesable: [true, true, false, false],
   texts: ['Напряжение\nтягового\nэлектродвигателя', 'Ток\nэлектродвигателя', 'Частатота\nвращения\nэлектродвигателя', 'Скорость\nлокомотива'],
   units: ['мВ', 'мА', 'об/мин', 'м/с'],
   colors: [{
@@ -957,6 +959,8 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.getDimensions = getDimensions;
 exports.random = random;
+exports.round = round;
+exports.setActiveButton = setActiveButton;
 exports.tick = tick;
 
 var _d = __webpack_require__(9);
@@ -976,7 +980,7 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 var state = new _state2.default();
 
 function getDimensions() {
-  var controlsHeight = document.querySelector('.controls').offsetHeight;
+  var controlsHeight = document.querySelector('.controls') ? document.querySelector('.controls').offsetHeight : 0;
   var headerHeight = document.querySelector('.header').offsetHeight;
 
   // svg size
@@ -990,24 +994,75 @@ function getDimensions() {
 
 // @param {array} [range] - [min, max]
 function random(range, precision) {
-  var number = 0;
   if (range) {
     var delta = range[1] - range[0];
-    number = Math.random() * delta + range[0];
-  } else {
-    number = Math.random();
+    return Math.random() * delta + range[0];
   }
+  return Math.random();
+}
+
+function round(number, precision) {
   if (precision === undefined) return number;
   return number.toFixed(precision);
 }
 
+function setActiveButton() {
+  var anomalies = document.querySelector('[data-anomalies]');
+  var repairing = document.querySelector('[data-repairing]');
+  var normal = document.querySelector('[data-normal]');
+
+  if (anomalies && repairing && normal) {
+    anomalies.classList.remove('is-active');
+    repairing.classList.remove('is-active');
+    normal.classList.remove('is-active');
+
+    switch (state.currentState) {
+      case 'anomalies':
+        anomalies.classList.add('is-active');
+        break;
+      case 'repairing':
+        repairing.classList.add('is-active');
+        break;
+      case 'normal':
+        normal.classList.add('is-active');
+        break;
+      default:
+        break;
+    }
+  }
+}
+
 function tick(ranges, datum) {
   var newDate = new Date(datum[0][datum[0].length - 1].date).getTime() + _config.config.incrementTime;
+  var randomNumber = random(ranges[0]);
+  var randomNumber2 = random(ranges[2]);
+
   datum.forEach(function (data, i) {
     var newValue = {
-      date: newDate,
-      value: random(ranges[i], _config.config.precision[i])
+      value: 0,
+      date: newDate
     };
+    switch (state.currentState) {
+      case 'anomalies':
+        if (i < 2) {
+          newValue.value = round((randomNumber - ranges[0][0]) * _config.config.corrections[i] + ranges[i][0], _config.config.precision[i]);
+        } else {
+          newValue.value = round((randomNumber2 - ranges[2][0]) * _config.config.correctionsAnomalies[i] + ranges[i][0], _config.config.precision[i]);
+        }
+        break;
+      case 'repairing':
+        if (i < 2) {
+          newValue.value = round((randomNumber - ranges[0][0]) * _config.config.corrections[i] + ranges[i][0], _config.config.precision[i]);
+        } else {
+          newValue.value = round(random(ranges[i]), _config.config.precision[i]);
+        }
+        break;
+      case 'normal':
+        newValue.value = round((randomNumber - ranges[0][0]) * _config.config.corrections[i] + ranges[i][0], _config.config.precision[i]);
+        break;
+      default:
+        break;
+    }
     data.push(newValue);
 
     if (data.length > _config.config.valuesCount) {
@@ -1227,7 +1282,7 @@ function localstorage(){
   } catch (e) {}
 }
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(21)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(22)))
 
 /***/ }),
 /* 8 */
@@ -1411,7 +1466,7 @@ function localstorage(){
   } catch (e) {}
 }
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(21)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(22)))
 
 /***/ }),
 /* 9 */
@@ -18243,7 +18298,7 @@ var debug = __webpack_require__(37)('socket.io-parser');
 var json = __webpack_require__(50);
 var Emitter = __webpack_require__(58);
 var binary = __webpack_require__(57);
-var isBuf = __webpack_require__(25);
+var isBuf = __webpack_require__(26);
 
 /**
  * Protocol version.
@@ -18674,19 +18729,21 @@ function render(datum) {
   (0, _helpers.getDimensions)();
 
   datum.forEach(function (data, i) {
+    var lastChartMarginBottom = i === datum.length - 1 ? 10 : 0;
     state.xScale.range([0, state.offsetWidth - state.margin.right - 200]);
-    state.yScale[i].range([state.offsetHeight - state.margin.bottom, 0]);
+    state.yScale[i].range([state.offsetHeight - state.margin.bottom - lastChartMarginBottom, 0]);
 
     state.svg[i].attr('width', state.width).attr('height', state.height);
 
     state.wrapper[i].attr('transform', 'translate(' + state.margin.left + ', ' + state.margin.top + ')');
+
     state.area[i].x(function (d) {
       return state.xScale(d.date);
-    }).y0(state.offsetHeight - state.margin.bottom).y1(function (d) {
+    }).y0(state.offsetHeight - state.margin.bottom - lastChartMarginBottom).y1(function (d) {
       return state.yScale[i](d.value);
     });
 
-    state.yAxis[i].call(d3.axisLeft().scale(state.yScale[i]));
+    state.yAxis[i].call(d3.axisLeft().scale(state.yScale[i]).ticks(4));
     state.yAxis[i].attr('transform', 'translate(' + state.margin.left + ', 0)');
 
     state.pathLine[i].attr('d', state.line[i]);
@@ -18695,7 +18752,7 @@ function render(datum) {
     if (i === datum.length - 1) {
       // new syntax d3.svg.axis().orient('bottom') ↦ d3.axisBottom()
       state.xAxis[i].call(d3.axisBottom().scale(state.xScale));
-      state.xAxis[i].attr('transform', 'translate(' + state.margin.left + ', ' + (state.offsetHeight - state.margin.bottom) + ')');
+      state.xAxis[i].attr('transform', 'translate(' + state.margin.left + ', ' + (state.offsetHeight - state.margin.bottom - lastChartMarginBottom) + ')');
     } else {
       state.xAxis[i].attr('x', state.margin.left).attr('y', state.offsetHeight - state.margin.bottom).attr('width', state.offsetWidth - 200 - state.margin.right + 1);
     }
@@ -18712,6 +18769,75 @@ function render(datum) {
 
 /***/ }),
 /* 15 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.toggleRunning = toggleRunning;
+exports.setSpeed = setSpeed;
+exports.toggleAnomalies = toggleAnomalies;
+exports.toggleRepairing = toggleRepairing;
+exports.toggleNormal = toggleNormal;
+
+var _helpers = __webpack_require__(5);
+
+var _state = __webpack_require__(2);
+
+var _state2 = _interopRequireDefault(_state);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var state = new _state2.default();
+
+function applyUpdate() {
+  clearInterval(state.intervalID);
+  if (state.isRunning) {
+    state.intervalID = setInterval(state.currentTick, state.speed);
+  }
+  (0, _helpers.setActiveButton)();
+}
+
+function toggleRunning(data, e) {
+  if (state.isRunning) {
+    clearInterval(state.intervalID);
+    e.target.textContent = 'Start';
+  } else {
+    state.intervalID = setInterval(state.currentTick, state.speed);
+    e.target.textContent = 'Stop';
+  }
+  state.isRunning = !state.isRunning;
+}
+
+function setSpeed(data, e) {
+  e.preventDefault();
+  state.speed = parseInt(e.target.querySelector('input').value);
+  applyUpdate();
+}
+
+function toggleAnomalies(data, e) {
+  state.currentTick = state.anomaliesTick;
+  document.body.classList.add('has-anomalies');
+  applyUpdate();
+}
+
+function toggleRepairing(data, e) {
+  state.currentTick = state.repairingTick;
+  document.body.classList.remove('has-anomalies');
+  applyUpdate();
+}
+
+function toggleNormal(data, e) {
+  state.currentTick = state.defaultTick;
+  document.body.classList.remove('has-anomalies');
+  applyUpdate();
+}
+
+/***/ }),
+/* 16 */
 /***/ (function(module, exports) {
 
 /**
@@ -18740,7 +18866,7 @@ module.exports = function(obj, fn){
 
 
 /***/ }),
-/* 16 */
+/* 17 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global) {/**
@@ -18800,7 +18926,7 @@ function polling (opts) {
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 17 */
+/* 18 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /**
@@ -18811,7 +18937,7 @@ var Transport = __webpack_require__(10);
 var parseqs = __webpack_require__(12);
 var parser = __webpack_require__(1);
 var inherit = __webpack_require__(6);
-var yeast = __webpack_require__(27);
+var yeast = __webpack_require__(28);
 var debug = __webpack_require__(7)('engine.io-client:polling');
 
 /**
@@ -19051,7 +19177,7 @@ Polling.prototype.uri = function () {
 
 
 /***/ }),
-/* 18 */
+/* 19 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global) {
@@ -19117,7 +19243,7 @@ function hasBinary(data) {
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 19 */
+/* 20 */
 /***/ (function(module, exports) {
 
 
@@ -19132,7 +19258,7 @@ module.exports = function(arr, obj){
 };
 
 /***/ }),
-/* 20 */
+/* 21 */
 /***/ (function(module, exports) {
 
 /**
@@ -19177,7 +19303,7 @@ module.exports = function parseuri(str) {
 
 
 /***/ }),
-/* 21 */
+/* 22 */
 /***/ (function(module, exports) {
 
 // shim for using process in browser
@@ -19363,7 +19489,7 @@ process.umask = function() { return 0; };
 
 
 /***/ }),
-/* 22 */
+/* 23 */
 /***/ (function(module, exports, __webpack_require__) {
 
 
@@ -19372,13 +19498,13 @@ process.umask = function() { return 0; };
  */
 
 var eio = __webpack_require__(39);
-var Socket = __webpack_require__(24);
+var Socket = __webpack_require__(25);
 var Emitter = __webpack_require__(3);
 var parser = __webpack_require__(13);
-var on = __webpack_require__(23);
-var bind = __webpack_require__(15);
+var on = __webpack_require__(24);
+var bind = __webpack_require__(16);
 var debug = __webpack_require__(8)('socket.io-client:manager');
-var indexOf = __webpack_require__(19);
+var indexOf = __webpack_require__(20);
 var Backoff = __webpack_require__(34);
 
 /**
@@ -19929,7 +20055,7 @@ Manager.prototype.onreconnect = function () {
 
 
 /***/ }),
-/* 23 */
+/* 24 */
 /***/ (function(module, exports) {
 
 
@@ -19959,7 +20085,7 @@ function on (obj, ev, fn) {
 
 
 /***/ }),
-/* 24 */
+/* 25 */
 /***/ (function(module, exports, __webpack_require__) {
 
 
@@ -19970,10 +20096,10 @@ function on (obj, ev, fn) {
 var parser = __webpack_require__(13);
 var Emitter = __webpack_require__(3);
 var toArray = __webpack_require__(60);
-var on = __webpack_require__(23);
-var bind = __webpack_require__(15);
+var on = __webpack_require__(24);
+var bind = __webpack_require__(16);
 var debug = __webpack_require__(8)('socket.io-client:socket');
-var hasBin = __webpack_require__(18);
+var hasBin = __webpack_require__(19);
 
 /**
  * Module exports.
@@ -20384,7 +20510,7 @@ Socket.prototype.compress = function (compress) {
 
 
 /***/ }),
-/* 25 */
+/* 26 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /* WEBPACK VAR INJECTION */(function(global) {
@@ -20404,7 +20530,7 @@ function isBuf(obj) {
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(0)))
 
 /***/ }),
-/* 26 */
+/* 27 */
 /***/ (function(module, exports) {
 
 module.exports = function(module) {
@@ -20432,7 +20558,7 @@ module.exports = function(module) {
 
 
 /***/ }),
-/* 27 */
+/* 28 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -20507,7 +20633,7 @@ module.exports = yeast;
 
 
 /***/ }),
-/* 28 */
+/* 29 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -20526,7 +20652,7 @@ var _render = __webpack_require__(14);
 
 var _helpers = __webpack_require__(5);
 
-var _handlers = __webpack_require__(32);
+var _handlers = __webpack_require__(15);
 
 var _state = __webpack_require__(2);
 
@@ -20578,7 +20704,7 @@ function init(datum) {
     // new syntax d3.scale.linear ↦ d3.scaleLinear
     state.yScale.push(d3.scaleLinear().domain(_config.config.yDomain[i]));
 
-    state.svg.push(d3.select('#chart').append('svg').attr('class', 'chart'));
+    state.svg.push(d3.select('#chart').append('svg').attr('class', 'chart' + (_config.config.anomaliesable[i] ? ' anomaliesable' : '')));
 
     // new syntax d3.svg.line ↦ d3.line
     // net syntax d3.svg.line.interpolate('basis') ↦ d3.line().curve(d3.curveBasis)
@@ -20622,27 +20748,42 @@ function init(datum) {
 
   (0, _render.render)(datum);
   (0, _sockets2.default)();
+  state.currentState = 'normal';
+  (0, _helpers.setActiveButton)();
 
   state.defaultTick = _helpers.tick.bind(null, _config.config.ranges, datum);
   state.anomaliesTick = _helpers.tick.bind(null, _config.config.anomaliesRanges, datum);
+  state.repairingTick = _helpers.tick.bind(null, _config.config.repairingRanges, datum);
   state.currentTick = state.defaultTick;
 
   state.speed = _config.config.speed;
   state.isRunning = true;
-  state.showAnomalies = false;
   state.intervalID = setInterval(state.currentTick, state.speed);
 
-  state.btnControl = document.querySelector('[data-control]');
-  state.btnSpeed = document.querySelector('[data-speed]');
+  // state.btnControl = document.querySelector('[data-control]');
+  // state.btnSpeed = document.querySelector('[data-speed]');
   state.btnAnomalies = document.querySelector('[data-anomalies]');
+  state.btnRepairing = document.querySelector('[data-repairing]');
+  state.btnNormal = document.querySelector('[data-normal]');
 
-  state.btnControl.addEventListener('click', _handlers.toggleRunning.bind(null, datum));
-  state.btnSpeed.addEventListener('submit', _handlers.setSpeed.bind(null, datum));
-  state.btnAnomalies.addEventListener('click', _handlers.toggleAnomalies.bind(null, datum));
+  // state.btnControl.addEventListener('click', toggleRunning.bind(null, datum));
+  // state.btnSpeed.addEventListener('submit', setSpeed.bind(null, datum));
+  state.btnAnomalies && state.btnAnomalies.addEventListener('click', function () {
+    state.currentState = 'anomalies';
+    (0, _handlers.toggleAnomalies)();
+  });
+  state.btnRepairing && state.btnRepairing.addEventListener('click', function () {
+    state.currentState = 'repairing';
+    (0, _handlers.toggleRepairing)();
+  });
+  state.btnNormal && state.btnNormal.addEventListener('click', function () {
+    state.currentState = 'normal';
+    (0, _handlers.toggleNormal)();
+  });
 }
 
 /***/ }),
-/* 29 */
+/* 30 */
 /***/ (function(module, exports) {
 
 module.exports = after
@@ -20676,7 +20817,7 @@ function noop() {}
 
 
 /***/ }),
-/* 30 */
+/* 31 */
 /***/ (function(module, exports) {
 
 /**
@@ -20711,13 +20852,13 @@ module.exports = function(arraybuffer, start, end) {
 
 
 /***/ }),
-/* 31 */
+/* 32 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
 
 
-var _init = __webpack_require__(28);
+var _init = __webpack_require__(29);
 
 var _render = __webpack_require__(14);
 
@@ -20729,20 +20870,47 @@ var _config = __webpack_require__(4);
 //   .then(response => response.json())
 //   .then(init);
 
+function calcCorrections(ranges) {
+  var min = ranges[0][0];
+  var max = ranges[0][1];
+  var baseDelta = max - min;
+  _config.config.corrections = ranges.map(function (range) {
+    var delta = range[1] - range[0];
+    return delta / baseDelta;
+  });
+}
+
+function calcAnomaliesCorrections(ranges) {
+  var baseDelta = ranges[2][1] - ranges[2][0];
+  var delta = ranges[3][1] - ranges[3][0];
+  _config.config.correctionsAnomalies = _config.config.corrections;
+  _config.config.correctionsAnomalies[2] = 1;
+  _config.config.correctionsAnomalies[3] = delta / baseDelta;
+}
+
+calcCorrections(_config.config.ranges);
+calcAnomaliesCorrections(_config.config.ranges);
+
 function genData(ranges) {
   var timeEnd = Date.now();
   var timeStart = timeEnd - _config.config.incrementTime * _config.config.valuesCount;
   var data = [];
   var rangesCount = ranges.length;
-  while (timeStart < timeEnd) {
+
+  var _loop = function _loop() {
     timeStart = timeStart + _config.config.incrementTime;
+    var randomNumber = (0, _helpers.random)(ranges[0]);
     ranges.forEach(function (range, i) {
       data[i] = data[i] || [];
       data[i].push({
-        value: (0, _helpers.random)(range, _config.config.precision[i]),
+        value: (0, _helpers.round)((randomNumber - ranges[0][0]) * _config.config.corrections[i] + range[0], _config.config.precision[i]),
         date: timeStart
       });
     });
+  };
+
+  while (timeStart < timeEnd) {
+    _loop();
   }
   return data;
 }
@@ -20751,68 +20919,6 @@ var data = genData(_config.config.ranges);
 (0, _init.init)(data);
 
 window.addEventListener('resize', _render.render.bind(null, data));
-
-/***/ }),
-/* 32 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-exports.toggleRunning = toggleRunning;
-exports.setSpeed = setSpeed;
-exports.toggleAnomalies = toggleAnomalies;
-
-var _helpers = __webpack_require__(5);
-
-var _state = __webpack_require__(2);
-
-var _state2 = _interopRequireDefault(_state);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var state = new _state2.default();
-
-function applyUpdate() {
-  clearInterval(state.intervalID);
-  if (state.isRunning) {
-    state.intervalID = setInterval(state.currentTick, state.speed);
-  }
-}
-
-function toggleRunning(data, e) {
-  if (state.isRunning) {
-    clearInterval(state.intervalID);
-    e.target.textContent = 'Start';
-  } else {
-    state.intervalID = setInterval(state.currentTick, state.speed);
-    e.target.textContent = 'Stop';
-  }
-  state.isRunning = !state.isRunning;
-}
-
-function setSpeed(data, e) {
-  e.preventDefault();
-  state.speed = parseInt(e.target.querySelector('input').value);
-  applyUpdate();
-}
-
-function toggleAnomalies(data, e) {
-  if (state.showAnomalies) {
-    state.currentTick = state.defaultTick;
-    e.target.textContent = 'Show anomalies';
-    document.body.classList.remove('has-anomalies');
-  } else {
-    state.currentTick = state.anomaliesTick;
-    e.target.textContent = 'Hide anomalies';
-    document.body.classList.add('has-anomalies');
-  }
-  state.showAnomalies = !state.showAnomalies;
-  applyUpdate();
-}
 
 /***/ }),
 /* 33 */
@@ -20834,6 +20940,8 @@ var _socket = __webpack_require__(53);
 
 var _socket2 = _interopRequireDefault(_socket);
 
+var _handlers = __webpack_require__(15);
+
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var state = new _state2.default();
@@ -20843,11 +20951,17 @@ function initSockets() {
 
   socket.on('action', function (data) {
     switch (data.type) {
-      case 'anomalies_on':
-        if (!state.showAnomalies) emitToggleAnomalies();
+      case 'аномалии':
+        state.currentState = 'anomalies';
+        (0, _handlers.toggleAnomalies)();
         break;
-      case 'anomalies_off':
-        if (state.showAnomalies) emitToggleAnomalies();
+      case 'ремонт':
+        state.currentState = 'repairing';
+        (0, _handlers.toggleRepairing)();
+        break;
+      case 'норма':
+        state.currentState = 'normal';
+        (0, _handlers.toggleNormal)();
         break;
       case 'start':
         if (!state.isRunning) emitToggleRunning();
@@ -20862,10 +20976,6 @@ function initSockets() {
 
   function emitToggleRunning() {
     state.btnControl.dispatchEvent(new Event('click'));
-  }
-
-  function emitToggleAnomalies() {
-    state.btnAnomalies.dispatchEvent(new Event('click'));
   }
 }
 
@@ -21545,12 +21655,12 @@ module.exports.parser = __webpack_require__(1);
  * Module dependencies.
  */
 
-var transports = __webpack_require__(16);
+var transports = __webpack_require__(17);
 var Emitter = __webpack_require__(3);
 var debug = __webpack_require__(7)('engine.io-client:socket');
-var index = __webpack_require__(19);
+var index = __webpack_require__(20);
 var parser = __webpack_require__(1);
-var parseuri = __webpack_require__(20);
+var parseuri = __webpack_require__(21);
 var parsejson = __webpack_require__(52);
 var parseqs = __webpack_require__(12);
 
@@ -21685,7 +21795,7 @@ Socket.protocol = parser.protocol; // this is an int
 
 Socket.Socket = Socket;
 Socket.Transport = __webpack_require__(10);
-Socket.transports = __webpack_require__(16);
+Socket.transports = __webpack_require__(17);
 Socket.parser = __webpack_require__(1);
 
 /**
@@ -22291,7 +22401,7 @@ Socket.prototype.filterUpgrades = function (upgrades) {
  * Module requirements.
  */
 
-var Polling = __webpack_require__(17);
+var Polling = __webpack_require__(18);
 var inherit = __webpack_require__(6);
 
 /**
@@ -22529,7 +22639,7 @@ JSONPPolling.prototype.doWrite = function (data, fn) {
  */
 
 var XMLHttpRequest = __webpack_require__(11);
-var Polling = __webpack_require__(17);
+var Polling = __webpack_require__(18);
 var Emitter = __webpack_require__(3);
 var inherit = __webpack_require__(6);
 var debug = __webpack_require__(7)('engine.io-client:polling-xhr');
@@ -22963,7 +23073,7 @@ var Transport = __webpack_require__(10);
 var parser = __webpack_require__(1);
 var parseqs = __webpack_require__(12);
 var inherit = __webpack_require__(6);
-var yeast = __webpack_require__(27);
+var yeast = __webpack_require__(28);
 var debug = __webpack_require__(7)('engine.io-client:websocket');
 var BrowserWebSocket = global.WebSocket || global.MozWebSocket;
 var NodeWebSocket;
@@ -24569,7 +24679,7 @@ try {
   }
 }).call(this);
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(26)(module), __webpack_require__(0)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(27)(module), __webpack_require__(0)))
 
 /***/ }),
 /* 51 */
@@ -24751,7 +24861,7 @@ module.exports = function parsejson(data) {
 
 var url = __webpack_require__(54);
 var parser = __webpack_require__(13);
-var Manager = __webpack_require__(22);
+var Manager = __webpack_require__(23);
 var debug = __webpack_require__(8)('socket.io-client');
 
 /**
@@ -24851,8 +24961,8 @@ exports.connect = lookup;
  * @api public
  */
 
-exports.Manager = __webpack_require__(22);
-exports.Socket = __webpack_require__(24);
+exports.Manager = __webpack_require__(23);
+exports.Socket = __webpack_require__(25);
 
 
 /***/ }),
@@ -24864,7 +24974,7 @@ exports.Socket = __webpack_require__(24);
  * Module dependencies.
  */
 
-var parseuri = __webpack_require__(20);
+var parseuri = __webpack_require__(21);
 var debug = __webpack_require__(8)('socket.io-client:url');
 
 /**
@@ -25309,7 +25419,7 @@ function plural(ms, n, name) {
  */
 
 var isArray = __webpack_require__(59);
-var isBuf = __webpack_require__(25);
+var isBuf = __webpack_require__(26);
 
 /**
  * Replaces every Buffer | ArrayBuffer in packet with a numbered placeholder.
@@ -25891,7 +26001,7 @@ module.exports = __webpack_amd_options__;
 
 }(this));
 
-/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(26)(module), __webpack_require__(0)))
+/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(27)(module), __webpack_require__(0)))
 
 /***/ }),
 /* 63 */

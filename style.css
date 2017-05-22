@@ -50,9 +50,6 @@ body {
   stroke-width: 2px;
 }
 
-.has-anomalies .line {
-  stroke: #f44336 !important;
-}
 
 .area {
   fill: lightsteelblue;
@@ -60,18 +57,39 @@ body {
   transition-duration: .7s;
 }
 
-.has-anomalies .area {
+.has-anomalies .anomaliesable .area {
   fill: #e47f7e !important;
+}
+
+.has-anomalies .anomaliesable .line {
+  stroke: #f44336 !important;
 }
 
 .controls {
   display: flex;
+  margin-left: 8px;
+  margin-right: 8px;
+  padding: 8px;
+  background-color: #fff;
+  box-shadow: 0 2px 2px rgba(0,0,0,.24), 0 0 2px rgba(0,0,0,.12);
+  width: 307px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.buttons-group {
+  display: flex;
+}
+
+.buttons-group .button:not(:last-child) {
+  margin-right: 4px;
 }
 
 .header {
   margin: 0;
   text-align: center;
   font-size: 30px;
+  padding: 4px;
 }
 
 .number {
@@ -80,4 +98,48 @@ body {
 
 .title {
   font-family: "OpenSansSemiBold", sans-serif;
+}
+
+.button {
+  -webkit-appearance: none;
+  background-color: transparent;
+  border: 1px solid #2196F3;
+  height: 32px;
+  padding-left: 16px;
+  padding-right: 16px;
+  font-size: 14px;
+  text-transform: uppercase;
+  color: #2196F3;
+  outline: none;
+  transition: all .3s;
+  cursor: pointer;
+}
+
+.button:hover,
+.button:focus,
+.button.is-active {
+  color: #fff;
+  background-color: #2196F3;
+}
+
+.button--success {
+  border: 1px solid #4caf50;
+  color: #4caf50;
+}
+
+.button--success:hover,
+.button--success:focus,
+.button--success.is-active {
+  background-color: #4caf50;
+}
+
+.button--alert {
+  border: 1px solid #ff5722;
+  color: #ff5722;
+}
+
+.button--alert:hover,
+.button--alert:focus,
+.button--alert.is-active {
+  background-color: #ff5722;
 }
